@@ -9,6 +9,8 @@ function serverBootstrapping() {
     const app = express();
     const server = app.listen(config.server.port);
 
+    app.use(cors());
+
     server.on('error', onErrorHandler);
     server.on('listening', function() {
         console.info(`Server is listening on port: ${config.server.port}`);
