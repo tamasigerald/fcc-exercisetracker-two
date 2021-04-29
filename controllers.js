@@ -29,10 +29,11 @@ async function postUser(req, res) {
             if (err) {
                 if(err.code && err.code == 11000) {
                     res.status(200).json({error: 'Username already taken!'})
+                    return;
                 }
             }
             const result = {
-                ...newUser._doc,
+                ...doc._doc,
                 saved: true
             }
             res.status(200).json(result);
@@ -62,26 +63,33 @@ async function postExercise(req, res) {
         duration,
         date
     } = req.body;
-
     if (!date || date === '' || date === undefined) {
         date = new Date;
     } else if (date) {
         date = new Date(date);
-
     }
-    // if (!date || date === '' || date === undefined) {
-    //     date = new Date().toDateString();
-    // } else if (date) {
-    //     date = new Date(date).toDateString();
-
-    // }
     try {
-        res.status(200).json({
-            user: userId,
-            dur: duration,
-            des: description,
-            date: date,
-        });
+        await User.findById(userId, (err, doc) => {
+            if (err) {
+                res.status(200).json({error: 'User not found!'})
+            }
+            const newExercise = new Exercise({
+                userId: userId,
+                description: description,
+                duration: duration,
+                date: date
+            })
+            newExercise.save((err, ex) => {
+                if (err) {
+                    res.status(200).json({error: err.message})
+                }
+                const result = {
+                    ...ex._doc,
+                    saved: true
+                }
+                res.status(200).json(result);
+            })
+        })
     } catch (error) {
         res.status(500).json({
             error: error.message
@@ -89,10 +97,48 @@ async function postExercise(req, res) {
     }
 }
 
+async function getUser(req, res) {
+    let { from, to, limit } = req.query;
+    let { id } = req.params;
+
+    from = from ? new Date(from) : new Date("1970-01-01");
+    to = to ? new Date(to) : new Date();
+    console.log({from, to});
+
+    try {
+        await User.findById(id)
+        .then(user => {
+            if (!user) {
+                res.status(200).json({error: 'User not found!'})
+                return;
+            }
+            Exercise.find({ userId: id })
+                .where('date').gte(from).lte(to)
+                .limit(+limit).exec()
+                .then(log => {
+                    res.status(200).json({
+                        _id: user._id,
+                        username: user.username,
+                        count: log.length,
+                        log: log.map(l => ({
+                            description: l.description,
+                            duration: l.duration,
+                            date: l.date
+                        }))
+                    })
+                })
+        })
+    } catch (error) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+}
 
 module.exports = {
     getHome,
     postUser,
     getUsers,
-    postExercise
+    postExercise,
+    getUser
 };

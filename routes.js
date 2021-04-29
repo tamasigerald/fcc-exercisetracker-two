@@ -13,4 +13,7 @@ router.route('/api/users')
 router.route('/api/users/:id/exercises')
 .post(controller.postExercise);
 
+router.route('/api/users/:id/logs')
+.get(controller.getUser);
+
 module.exports = router;
