@@ -22,9 +22,21 @@ async function postUser(req, res) {
         username
     } = req.body;
     try {
-        res.status(200).json({
-            user: username
+        const newUser = new User({
+            username: username
         });
+        await newUser.save((err, doc) => {
+            if (err) {
+                if(err.code && err.code == 11000) {
+                    res.status(200).json({error: 'Username already taken!'})
+                }
+            }
+            const result = {
+                ...newUser._doc,
+                saved: true
+            }
+            res.status(200).json(result);
+        })
     } catch (error) {
         res.status(500).json({
             error: error.message
@@ -34,9 +46,8 @@ async function postUser(req, res) {
 
 async function getUsers(req, res) {
     try {
-        res.status(200).json({
-            users: "many"
-        })
+        const users = await User.find();
+        res.status(200).json(users);
     } catch (error) {
         res.status(500).json({
             error: error.message
