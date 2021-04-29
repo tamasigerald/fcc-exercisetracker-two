@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 
 
-const exerciseSchema = new mongoose.mongoose.Schema({
+const exerciseSchema = new mongoose.Schema({
     description: {
         type: String,
         required: true,
